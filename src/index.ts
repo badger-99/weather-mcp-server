@@ -1,8 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import express, { Request, Response } from "express";
+import cors from "cors";
 import { z } from "zod";
 import { AlertFeature, AlertsResponse, ForecastPeriod, ForecastResponse, PointsResponse } from "./types.js";
-import { unknown } from "zod/v4";
+
+function getServer() {
+  
+
 
 const NWS_API_BASE = "https://api.weather.gov";
 const USER_AGENT = "weather-app/0.1";
@@ -181,15 +186,53 @@ server.tool(
       ],
     };
   },
-);
-
-async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Weather MCP Server running on stdio");
+  );
+  
+  return server;
 }
 
-main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
+// Create an Express app to handle HTTP requests
+const app = express();
+app.use(cors()); // Allow cross-origin requests from VS code
+app.use(express.json()); // Parse JSON request bodies
+
+// This will handle all MCP protocol messages
+app.post('/mcp', async (req: Request, res: Response) => {
+  try {
+    // Handle MCP request
+  const server = getServer();
+
+  // Create HTTP transport layer to make this server remote
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: undefined // No session_id to make this a stateless server
+  });
+
+  res.on("close", () => {
+    console.error("Request closed")
+    transport.close()
+    server.close();
+  });
+
+  await server.connect(transport); // Connect terver to remote transport layer
+  await transport.handleRequest(req, res)
+  } catch (error) {
+    console.error("Error handling MCP request:", error)
+    if (!res.headersSent) {
+      res.status(500).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32603,
+          message: "Internal server error",
+        },
+        id: null,
+      });
+    }
+  }
+  
+})
+
+
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`MCP Stateless Streamable HTTP Server listening on port ${PORT}`);
 });
