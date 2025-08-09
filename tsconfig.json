@@ -10,6 +10,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["src/index.ts"],
+  "exclude": ["node_modules", "src/local_stdio_mcp_server.ts"]
 }
