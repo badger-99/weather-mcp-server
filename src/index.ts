@@ -6,9 +6,6 @@ import { z } from "zod";
 import { AlertFeature, AlertsResponse, ForecastPeriod, ForecastResponse, PointsResponse } from "./types.js";
 
 function getServer() {
-  
-
-
 const NWS_API_BASE = "https://api.weather.gov";
 const USER_AGENT = "weather-app/0.1";
 
@@ -36,7 +33,7 @@ async function makeNWSRequest<T>(url: string): Promise<T | null> {
     }
     return (await response.json()) as T
   } catch (error) {
-    console.error("Error making NES request:", error)
+    console.error("Error making National Weather Service request:", error)
     return null
   }
 }
@@ -108,12 +105,12 @@ server.tool(
   "get_forecast",
   "Get weather forecast for a location",
   {
-    latitude: z.number().min(-90).max(90).describe("Latitude of the location"),
-    longitude: z.number().min(-180).max(180).describe("longitude of the location"),
+    latitude: z.coerce.number().min(-90).max(90).describe("Latitude of the location"),
+    longitude: z.coerce.number().min(-180).max(180).describe("Longitude of the location"),
   },
   async ({ latitude, longitude }) => {
     // Get grid point data
-    const pointsUrl = `${NWS_API_BASE}/points/${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+    const pointsUrl = `${NWS_API_BASE}/points/${latitude.toFixed(4)},${longitude.toFixed(4)}`;
     const pointsData = await makeNWSRequest<PointsResponse>(pointsUrl);
 
     if (!pointsData) {
@@ -133,7 +130,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: "Failed to get forecast URK from grid point data",
+            text: "Failed to get forecast URL from grid point data",
           },
         ],
       };
@@ -193,28 +190,33 @@ server.tool(
 
 // Create an Express app to handle HTTP requests
 const app = express();
-app.use(cors()); // Allow cross-origin requests from VS code
+app.use(cors(({
+  origin: '*', // Allow all origins - adjust as needed for production
+  exposedHeaders: ['Mcp-Session-Id']
+}))); // Allow cross-origin requests from VS code
 app.use(express.json()); // Parse JSON request bodies
 
 // This will handle all MCP protocol messages
 app.post('/mcp', async (req: Request, res: Response) => {
-  try {
-    // Handle MCP request
+  
+  // Handle MCP request
   const server = getServer();
-
   // Create HTTP transport layer to make this server remote
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: undefined // No session_id to make this a stateless server
   });
+  
+  try {
 
+  await server.connect(transport); // Connect terver to remote transport layer
+  await transport.handleRequest(req, res, req.body)
+    
   res.on("close", () => {
     console.error("Request closed")
     transport.close()
     server.close();
   });
 
-  await server.connect(transport); // Connect terver to remote transport layer
-  await transport.handleRequest(req, res)
   } catch (error) {
     console.error("Error handling MCP request:", error)
     if (!res.headersSent) {
@@ -230,7 +232,6 @@ app.post('/mcp', async (req: Request, res: Response) => {
   }
   
 })
-
 
 const PORT = 3000;
 app.listen(PORT, () => {
