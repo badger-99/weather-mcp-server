@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "bin": {
-    "weather": "./build/index.js"
+    "weather": "./build/local.js"
   },
   "scripts": {
     "start": "node dist/server.js",

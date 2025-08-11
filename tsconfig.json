@@ -11,5 +11,5 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/server.ts"],
-  "exclude": ["node_modules", "src/local_stdio_mcp_server.ts", "dist"]
+  "exclude": ["node_modules", "src/local.ts", "dist", "build"]
 }
