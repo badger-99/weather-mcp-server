@@ -7,7 +7,7 @@ import { AlertFeature, AlertsResponse, ForecastPeriod, ForecastResponse, PointsR
 
 function getServer() {
 const NWS_API_BASE = "https://api.weather.gov";
-const USER_AGENT = "weather-app/0.1";
+const USER_AGENT = process.env.USER_AGENT || "weather-app/0.1";
 
 // Create server instance
 const server = new McpServer({
@@ -233,7 +233,7 @@ app.post('/mcp', async (req: Request, res: Response) => {
   
 })
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;;
 app.listen(PORT, () => {
   console.log(`MCP Stateless Streamable HTTP Server listening on port ${PORT}`);
 });
