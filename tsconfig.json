@@ -3,13 +3,13 @@
     "target": "ES2022",
     "module": "Node16",
     "moduleResolution": "Node16",
-    "outDir": "./build",
+    "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/index.ts"],
-  "exclude": ["node_modules", "src/local_stdio_mcp_server.ts"]
+  "include": ["src/server.ts"],
+  "exclude": ["node_modules", "src/local_stdio_mcp_server.ts", "dist"]
 }
